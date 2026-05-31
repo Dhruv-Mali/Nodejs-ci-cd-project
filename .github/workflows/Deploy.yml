@@ -1,22 +1,30 @@
-name: Deploy Node.js App
+name: Node.js CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  deploy:
+  build-test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18.x]
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node-version }}
+          cache: npm
 
       - name: Install Dependencies
         run: npm install
@@ -24,20 +32,15 @@ jobs:
       - name: Run Tests
         run: npm test --if-present
 
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ SERVER_USER }}
-          Password: ${{ SERVER_PASSWORD }}
-          port: 2222
-          script: |
-            cd /var/www/nodejs-ci-cd-project
+      - name: Build Project
+        run: npm run build --if-present
 
-            git pull origin main
+  deploy:
+    needs: build-test
+    runs-on: ubuntu-latest
 
-            npm install
+    if: github.ref == 'refs/heads/main'
 
-            pm2 restart all || pm2 start server.js --name node-app
-
-            pm2 save
+    steps:
+      - name: Deploy Step
+        run: echo "Add deployment commands here"
