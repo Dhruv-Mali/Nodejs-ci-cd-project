@@ -1,46 +1,42 @@
-name: Node.js CI/CD Pipeline
+name: Node.js CI/CD Pipeline - Password Auth
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x]
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '18.x'
           cache: npm
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Run Tests
-        run: npm test --if-present
-
-      - name: Build Project
-        run: npm run build --if-present
+      
+      - run: npm ci
+      - run: npm test
+      - run: npm run build --if-present
 
   deploy:
     needs: build-test
     runs-on: ubuntu-latest
-
     if: github.ref == 'refs/heads/main'
-
+    
     steps:
-      - name: Deploy Step
-        run: echo "Add deployment commands here"
+      - uses: actions/checkout@v4
+      
+      - name: Deploy with SSH Password
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            cd /var/www/nodejs-app
+            git pull origin main
+            npm ci --production
+            pm2 restart nodejs-app || pm2 start index.js --name nodejs-app
+            pm2 save
