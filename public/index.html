@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="glass-card">
+            <div class="header">
+                <h1>Deployment Dashboard</h1>
+                <div class="status-badge">
+                    <div class="pulse"></div>
+                    <span>System Online</span>
+                </div>
+            </div>
+            
+            <p class="subtitle">Welcome to your continuous integration and deployment pipeline.</p>
+            
+            <div class="action-section">
+                <button id="fetch-btn" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 0 1 9-9"/></svg>
+                    Ping Backend API
+                </button>
+            </div>
+
+            <div id="response-box" class="response-container hidden">
+                <div class="response-header">API Response</div>
+                <code id="response-text"></code>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('fetch-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('fetch-btn');
+            const resBox = document.getElementById('response-box');
+            const resText = document.getElementById('response-text');
+            
+            btn.classList.add('loading');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = 'Ping Backend API...';
+            
+            try {
+                const response = await fetch('/api/message');
+                const data = await response.json();
+                resText.innerText = JSON.stringify(data, null, 2);
+                resBox.classList.remove('hidden');
+                resBox.classList.add('visible');
+                resBox.classList.remove('error');
+            } catch(e) {
+                resText.innerText = 'Error: Could not connect to backend.';
+                resBox.classList.remove('hidden');
+                resBox.classList.add('visible', 'error');
+            }
+            
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.innerHTML = originalContent;
+            }, 500);
+        });
+    </script>
+</body>
+</html>
